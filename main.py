@@ -19,13 +19,14 @@ for page in range(1):
 
     table = soup.find("table", id = "ContentPlaceHolder1_ProductClassDetail") #extract the table which holds all the chemicals
 
+    
+
+    table_rows = table.find_all("a") #extracts all the rows of the table that use the anchor html tag (all the CAS and product names are wrapped in the anchor tag)
+
     #initialize lists to hold relevent data
     CAS = [len(table_rows)]
     productName = [len(table_rows)]
     molecularFormula = [len(table_rows)]
-
-    table_rows = table.find_all("a") #extracts all the rows of the table that use the anchor html tag (all the CAS and product names are wrapped in the anchor tag)
-
 
     #extract and append all the CAS numbers and product names into their respective lists
     for chemical in range(len(table_rows)):
@@ -84,3 +85,5 @@ for page in range(1):
             print(images[img]['src'])
             df.iat[row, img+3] = images[img]['src']
         row += 1
+
+print(df.head(200))

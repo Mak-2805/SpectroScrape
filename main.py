@@ -6,11 +6,12 @@ from airtable import airtable
 import time
 import random
 
+warnings.simplefilter(action='ignore', category=FutureWarning) #surpress warnings
 
 df = pd.DataFrame(columns=["CAS", "Product Name", "Molecular Formula", "Graph1", "Graph2", "Graph3", "Graph4", "Graph5", "Graph 6", "Graph 7", "Graph 8"])
 
 #Note there are 1058 pages of data to scrape
-for page in range(2):
+for page in range(1):
     #download contents of the pages and create BeautifulSoup object
     url = f"https://www.chemicalbook.com/CASDetailList_{page*100}_EN.htm"
     data = requests.get(url).text
@@ -64,3 +65,22 @@ for page in range(2):
     CAS_filtered = CAS[0:len(CAS)-1]
     PN_filtered = productName[0:len(productName)-1]
     MF_filtered = molecularFormula[0:len(molecularFormula)-1]
+
+    #append the CAS number, product name, and molecular formula to the pandas dataframe
+    for i in range(len(CAS_filtered)):
+        df = df.append({"CAS":CAS_filtered[i], "Product Name": PN_filtered[i], "Molecular Formula": MF_filtered[i],
+                    }, ignore_index = True)
+    
+    #extract spectroscopy data and add it to the dataframe
+    row = 0
+    for i in range(len(CAS_filtered)):
+        spectroPage = requests.get(f"https://www.chemicalbook.com/SpectrumEN_{CAS_filtered[i]}_MS.htm").text
+
+        soup = BeautifulSoup(spectroPage, "html.parser")
+
+        images = soup.find_all("img", class_ = "cursorimg")
+
+        for img in range(0,len(images)): 
+            print(images[img]['src'])
+            df.iat[row, img+3] = images[img]['src']
+        row += 1

@@ -5,6 +5,13 @@ import warnings
 from airtable import airtable
 import time
 import random
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+api_key = os.getenv('api_key')
+base_id = os.getenv('base_id')
+table_name = os.getenv('table_name')
 
 warnings.simplefilter(action='ignore', category=FutureWarning) #surpress warnings
 

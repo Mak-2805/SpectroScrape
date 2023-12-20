@@ -42,3 +42,25 @@ for page in range(2):
 
     for i in range(len(productName)):
         print(CAS[i], productName[i], molecularFormula[i])
+
+    #remove all chemicals without a spectroscopy webpage
+    for cas in range(len(table_rows)):
+        r = requests.get(f"https://www.chemicalbook.com/SpectrumEN_{CAS[cas]}_MS.htm")
+        print(r.status_code, cas, CAS[cas])
+        if(not(r.status_code < 400 and r.status_code >= 200)):
+            CAS[cas] = None
+            productName[cas] = None
+            molecularFormula[cas] = None
+            
+        time.sleep(random.randint(0, 3))
+
+    while None in CAS:
+        # removing None from list using remove method
+        CAS.remove(None)
+        productName.remove(None)
+        molecularFormula.remove(None)
+    
+    #create list to store the filtered data and remove garbage data in the last entry
+    CAS_filtered = CAS[0:len(CAS)-1]
+    PN_filtered = productName[0:len(productName)-1]
+    MF_filtered = molecularFormula[0:len(molecularFormula)-1]

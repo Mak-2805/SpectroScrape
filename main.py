@@ -5,20 +5,25 @@ import warnings
 from airtable import airtable
 import time
 import random
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
-api_key = os.getenv('api_key')
-base_id = os.getenv('base_id')
-table_name = os.getenv('table_name')
+
 
 warnings.simplefilter(action='ignore', category=FutureWarning) #surpress warnings
 
-df = pd.DataFrame(columns=["CAS", "Product Name", "Molecular Formula", "Graph1", "Graph2", "Graph3", "Graph4", "Graph5", "Graph 6", "Graph 7", "Graph 8"])
+df = pd.DataFrame(columns=["CAS", "Product Name", "Molecular Formula", "Graph1", "Graph2", "Graph3", "Graph4", "Graph5", "Graph6", "Graph7", "Graph8"])
+casFiltered = []
+pnFiltered = []
+mfFiltered = []
 
 #Note there are 1058 pages of data to scrape
-for page in range(1,2):
+firstPage = int(input("Which page from 1-1058 would you like to begin scraping spectroscopy data")) - 1
+lastPage = int(input("What page would you like to go up to (note that this page will not be included)")) - 1
+
+#perliminary error check on page pounds
+while firstPage < 1 or firstPage > 1058 or lastPage < 0 or lastPage > 1059 or firstPage > lastPage:
+    print("invalid page selection")
+
+for page in range(firstPage, lastPage):
     #download contents of the pages and create BeautifulSoup object
     url = f"https://www.chemicalbook.com/CASDetailList_{page*100}_EN.htm"
     data = requests.get(url).text
@@ -70,19 +75,25 @@ for page in range(1,2):
         molecularFormula.remove(None)
     
     #create list to store the filtered data and remove garbage data in the last entry
-    CAS_filtered = CAS[0:len(CAS)-1]
-    PN_filtered = productName[0:len(productName)-1]
-    MF_filtered = molecularFormula[0:len(molecularFormula)-1]
+    CAS = CAS[0:len(CAS)-1]
+    productName = productName[0:len(productName)-1]
+    molecularFormula = molecularFormula[0:len(molecularFormula)-1]
 
-    #append the CAS number, product name, and molecular formula to the pandas dataframe
-    for i in range(len(CAS_filtered)):
-        df = df.append({"CAS":CAS_filtered[i], "Product Name": PN_filtered[i], "Molecular Formula": MF_filtered[i],
+    casFiltered.extend(CAS)
+    pnFiltered.extend(productName)
+    mfFiltered.extend(molecularFormula)
+
+#append the CAS number, product name, and molecular formula to the pandas dataframe
+for i in range(len(casFiltered)):
+        df = df.append({"CAS":casFiltered[i], "Product Name": pnFiltered[i], "Molecular Formula": mfFiltered[i],
                     }, ignore_index = True)
+
+for page in range(firstPage, lastPage):
     
     #extract spectroscopy data and add it to the dataframe
     row = 0
-    for i in range(len(CAS_filtered)):
-        spectroPage = requests.get(f"https://www.chemicalbook.com/SpectrumEN_{CAS_filtered[i]}_MS.htm").text
+    for i in range(len(casFiltered)):
+        spectroPage = requests.get(f"https://www.chemicalbook.com/SpectrumEN_{casFiltered[i]}_MS.htm").text
 
         soup = BeautifulSoup(spectroPage, "html.parser")
 
@@ -93,4 +104,8 @@ for page in range(1,2):
             df.iat[row, img+3] = images[img]['src']
         row += 1
         time.sleep(random.randint(0, 3))
+    
+df_cleaned = df.fillna('')  # Replace NaN values with empty string
 
+csv_file_path = 'database.csv'
+df.to_csv(csv_file_path, index=False)
